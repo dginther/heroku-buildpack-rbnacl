@@ -22,6 +22,8 @@ class LanguagePack::Ruby < LanguagePack::Base
   DEFAULT_RUBY_VERSION = "ruby-2.0.0"
   RBX_BASE_URL         = "http://binaries.rubini.us/heroku"
   NODE_BP_PATH         = "vendor/node/bin"
+  LIBSODIUM_VERSION   = "0.4.5"
+  DNSCRYPT_VERSION    = "1.4.0"
 
   # detects if this is a valid Ruby app
   # @return [Boolean] true if it's a Ruby app
@@ -87,6 +89,8 @@ class LanguagePack::Ruby < LanguagePack::Base
       remove_vendor_bundle
       install_ruby
       install_jvm
+      install_libsodium
+      install_dnscrypt
       setup_language_pack_environment
       setup_profiled
       allow_git do
@@ -447,6 +451,36 @@ WARNING
       Dir.chdir(dir) do |dir|
         @fetchers[:buildpack].fetch_untar("#{LIBYAML_PATH}.tgz")
       end
+    end
+  end
+
+  def slug_vendor_libsodium(version)
+    "vendor/libsodium-#{version}"
+  end
+
+  def install_libsodium
+    Dir.chdir("vendor") do |dir|
+      run("curl http://download.dnscrypt.org/libsodium/releases/libsodium-#{LIBSODIUM_VERSION}.tar.gz  -s -O")
+      run("tar xzvf libsodium-#{LIBSODIUM_VERSION}.tar.gz")
+    end
+    Dir.chdir("vendor/libsodium-#{LIBSODIUM_VERSION}") do |dir|
+      run("./configure --prefix=#{Dir.getwd}")
+      run("make && make check && make install")
+    end
+  end
+
+  def slug_vendor_dnscrypt(version)
+    "vendor/dnscrypt-proxy-#{version}"
+  end
+
+  def install_dnscrypt
+    Dir.chdir("vendor") do |dir|
+      run("curl http://download.dnscrypt.org/dnscrypt-proxy/dnscrypt-proxy-#{DNSCRYPT_VERSION}.tar.gz -s -O")
+      run("tar xzvf dnscrypt-proxy-#{DNSCRYPT_VERSION}.tar.gz")
+    end
+    Dir.chdir("vendor/dnscrypt-proxy-#{DNSCRYPT_VERSION}") do |dir|
+      run("./configure --prefix=#{Dir.getwd}")
+      run("make && make check && make install")
     end
   end
 
